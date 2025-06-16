@@ -15,3 +15,27 @@ Kubernetes (K8s) handles container orchestration, load balancing, scaling, and d
      |                                |
      v                                v
 [Kubernetes Deployment & Services: Flask + FastAPI + Optional DB (MySQL/Postgres)]
+
+
+# 🚀 Deployment Commands
+
+# Step 1: Build and push images
+docker build -t your-dockerhub-username/flask-app:latest ./flask-app
+docker push your-dockerhub-username/flask-app:latest
+
+docker build -t your-dockerhub-username/fastapi-ml:latest ./fastapi-ml
+docker push your-dockerhub-username/fastapi-ml:latest
+
+# Step 2: Apply Kubernetes configs
+kubectl apply -f k8s/flask-deployment.yaml
+kubectl apply -f k8s/fastapi-deployment.yaml
+
+
+# ✅ Optional Add-ons
+Add ingress controller (like NGINX) for external URL routing.
+
+Add Horizontal Pod Autoscaler for scaling.
+
+Use ConfigMaps or Secrets for environment variables.
+
+Add PostgreSQL or MySQL DB deployment if needed.

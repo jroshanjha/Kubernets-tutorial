@@ -39,3 +39,80 @@ Add Horizontal Pod Autoscaler for scaling.
 Use ConfigMaps or Secrets for environment variables.
 
 Add PostgreSQL or MySQL DB deployment if needed.
+
+
+# ☁️ Choose one:
+AWS (EKS - Elastic Kubernetes Service)
+
+GCP (GKE - Google Kubernetes Engine)
+
+Azure (AKS - Azure Kubernetes Service)
+
+# 🔧 Step-by-Step K8s Deployment: AWS, GCP, Azure
+
+# 🔸 1. Kubernetes Cluster Creation
+# Install eksctl: https://docs.aws.amazon.com/eks/latest/userguide/eksctl.html
+
+eksctl create cluster \
+  --name ml-cluster \
+  --region us-east-1 \
+  --nodes 2 \
+  --node-type t3.medium \
+  --with-oidc \
+  --managed
+
+# ✅ GCP (GKE)
+# Authenticate
+gcloud auth login
+gcloud config set project YOUR_PROJECT_ID
+
+# Create GKE cluster
+gcloud container clusters create ml-cluster \
+  --zone us-central1-a \
+  --num-nodes=2
+
+# Get credentials
+gcloud container clusters get-credentials ml-cluster --zone us-central1-a
+
+# ✅ Azure (AKS)
+# Login to Azure
+az login
+
+# Create Resource Group
+az group create --name ml-resource-group --location eastus
+
+# Create AKS Cluster
+az aks create \
+  --resource-group ml-resource-group \
+  --name ml-cluster \
+  --node-count 2 \
+  --enable-addons monitoring \
+  --generate-ssh-keys
+
+# Get credentials
+az aks get-credentials --resource-group ml-resource-group --name ml-cluster
+
+# 🔸. Deploy App to Kubernetes
+
+# Switch to your project directory
+kubectl apply -f k8s/fastapi-deployment.yaml
+kubectl apply -f k8s/flask-deployment.yaml
+
+kubectl get all
+
+# 🔸 3. Expose Flask with LoadBalancer
+All 3 providers support type: LoadBalancer. Your YAML already does this:
+type: LoadBalancer
+
+kubectl get service flask-service
+
+# ➡️ Wait for EXTERNAL-IP to appear (public IP).
+
+# Build + Push Docker Images (CI/CD or Manual)
+# Replace with your DockerHub username
+docker build -t yourname/flask-app ./flask-app
+docker build -t yourname/fastapi-ml ./fastapi-ml
+
+docker push yourname/flask-app
+docker push yourname/fastapi-ml
+

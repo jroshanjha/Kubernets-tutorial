@@ -1,0 +1,17 @@
+To deploy a Flask application and FastAPI-based ML model service using Kubernetes, you can create a microservices architecture where:
+
+Flask app serves as the frontend/UI or main application logic.
+
+FastAPI service serves as a backend ML API (model prediction, analytics, etc.).
+
+Kubernetes (K8s) handles container orchestration, load balancing, scaling, and deployment.
+
+# ✅ Architecture Overview
+
+[User/Browser]
+     |
+     v
+[Flask Frontend App] <-------> [FastAPI ML Microservice]
+     |                                |
+     v                                v
+[Kubernetes Deployment & Services: Flask + FastAPI + Optional DB (MySQL/Postgres)]

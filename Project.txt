@@ -1,0 +1,162 @@
+# train_model.py (place in fastapi-ml/)
+
+from sklearn.datasets import load_iris
+from sklearn.ensemble import RandomForestClassifier
+import joblib
+
+iris = load_iris()
+X, y = iris.data, iris.target
+model = RandomForestClassifier()
+model.fit(X, y)
+
+joblib.dump(model, 'model.pkl')
+
+# 2️⃣ 🐍 Flask Frontend Code (flask-app/app.py)
+from flask import Flask, request, jsonify
+import requests
+
+app = Flask(__name__)
+
+@app.route('/')
+def home():
+    return '🌸 Flask Frontend - ML Demo App'
+
+@app.route('/predict', methods=['POST'])
+def predict():
+    features = request.json.get('features', [])
+    res = requests.post('http://fastapi-service:8000/predict', json={"features": features})
+    return jsonify(res.json())
+
+# 3️⃣ ⚡ FastAPI ML Microservice (fastapi-ml/main.py)
+from fastapi import FastAPI, Request
+import joblib
+
+app = FastAPI()
+model = joblib.load("model.pkl")
+
+@app.post("/predict")
+async def predict(request: Request):
+    data = await request.json()
+    features = data["features"]
+    prediction = model.predict([features])
+    return {"prediction": prediction.tolist()}
+
+# 4️⃣ 🐳 Dockerfiles
+flask-app/Dockerfile
+
+FROM python:3.9
+WORKDIR /app
+COPY . .
+RUN pip install flask requests
+CMD ["python", "app.py"]
+
+# fastapi-ml/Dockerfile
+FROM python:3.9
+WORKDIR /app
+COPY . .
+RUN pip install fastapi uvicorn joblib scikit-learn
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+
+# 5️⃣ 📦 Kubernetes YAMLs
+k8s/flask-deployment.yaml
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: flask-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: flask
+  template:
+    metadata:
+      labels:
+        app: flask
+    spec:
+      containers:
+      - name: flask
+        image: your-dockerhub/flask-app:latest
+        ports:
+        - containerPort: 5000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: flask-service
+spec:
+  selector:
+    app: flask
+  ports:
+  - port: 80
+    targetPort: 5000
+  type: LoadBalancer
+
+k8s/fastapi-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fastapi-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: fastapi
+  template:
+    metadata:
+      labels:
+        app: fastapi
+    spec:
+      containers:
+      - name: fastapi
+        image: your-dockerhub/fastapi-ml:latest
+        ports:
+        - containerPort: 8000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: fastapi-service
+spec:
+  selector:
+    app: fastapi
+  ports:
+  - port: 8000
+    targetPort: 8000
+  type: ClusterIP
+
+# 6️⃣ 🔁 CI/CD with GitHub Actions
+
+Create .github/workflows/docker-deploy.yml:
+name: Deploy to DockerHub
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service: [flask-app, fastapi-ml]
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Log in to DockerHub
+      run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+
+    - name: Build Docker image
+      run: docker build -t ${{ secrets.DOCKER_USERNAME }}/${{ matrix.service }}:latest ./${{ matrix.service }}
+
+    - name: Push Docker image
+      run: docker push ${{ secrets.DOCKER_USERNAME }}/${{ matrix.service }}:latest
+
+# 7️⃣ ☸️ Optional: Helm Chart Setup
+Would you like a full Helm Chart (templates, values, etc.) for this setup?
+
+# 8️⃣ 🧼 Optional: Streamlit Version Instead of Flask?
+If you want the Flask frontend replaced with a Streamlit UI for users to input features and call the FastAPI model API, I’ll provide that too.
